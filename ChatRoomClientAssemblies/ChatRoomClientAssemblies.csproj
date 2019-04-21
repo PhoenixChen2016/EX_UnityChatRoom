@@ -5,17 +5,22 @@
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 	<PropertyGroup>
-		<UnityExcludeAssemblies>
-			$(TargetDir)$(AssemblyName).*;
-			$(TargetDir)System.Runtime.InteropServices.WindowsRuntime.dll
-		</UnityExcludeAssemblies>
-		<UnityTargetFolder>$(SolutionDir)\Assets\Assemblies\</UnityTargetFolder>
+		<UnityTargetFolder>$(SolutionDir)Assets\Assemblies\</UnityTargetFolder>
 	</PropertyGroup>
+
 	<ItemGroup>
-		<ModuleFiles Include="$(TargetDir)*" Exclude="$(UnityExcludeAssemblies)" DestinationPath="$(UnityTargetFolder)%(Filename)%(Extension)">
-		</ModuleFiles>
+		<ProjectReference Include="..\ChatRoomLibrary\ChatRoomLibrary.csproj" />
 	</ItemGroup>
 	<Target Name="PublishModule" AfterTargets="PostBuildEvent">
-		<Copy SourceFiles="@(ModuleFiles)" DestinationFiles="@(ModuleFiles->'%(DestinationPath)')" />
+		<ItemGroup>
+			<ModuleFiles
+				Include="$(TargetDir)*"
+				Exclude="$(TargetDir)$(AssemblyName).*;$(TargetDir)System.Runtime.InteropServices.WindowsRuntime.dll"/>
+			<UnityExistsAssemblies Include="$(UnityTargetFolder)*"/>
+			<UnityAssembliesSubFolders Include="$(UnityTargetFolder)**\"/>
+		</ItemGroup>
+		<Delete Files="@(UnityExistsAssemblies)"/>
+		<RemoveDir Directories="@(UnityAssembliesSubFolders)" />
+		<Copy SourceFiles="@(ModuleFiles)" DestinationFolder="$(UnityTargetFolder)" />
 	</Target>
 </Project>
