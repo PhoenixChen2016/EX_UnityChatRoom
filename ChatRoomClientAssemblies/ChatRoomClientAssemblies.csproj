@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	</PropertyGroup>
+	<PropertyGroup>
+		<UnityExcludeAssemblies>
+			$(TargetDir)$(AssemblyName).*;
+			$(TargetDir)System.Runtime.InteropServices.WindowsRuntime.dll
+		</UnityExcludeAssemblies>
+		<UnityTargetFolder>$(SolutionDir)\Assets\Assemblies\</UnityTargetFolder>
+	</PropertyGroup>
+	<ItemGroup>
+		<ModuleFiles Include="$(TargetDir)*" Exclude="$(UnityExcludeAssemblies)" DestinationPath="$(UnityTargetFolder)%(Filename)%(Extension)">
+		</ModuleFiles>
+	</ItemGroup>
+	<Target Name="PublishModule" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="@(ModuleFiles)" DestinationFiles="@(ModuleFiles->'%(DestinationPath)')" />
+	</Target>
+</Project>
