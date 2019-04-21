@@ -7,16 +7,16 @@ namespace ChatRoomLibrary
 {
 	public static class ChatRoomClientExtensions
 	{
-		public static Task SendNameAsync(this ChatRoomClient client, string name)
+		public static void SendName(this ChatRoomClient client, string name)
 		{
 			var request = $"LOGINNAME:{name}";
 
-			return client.SendAsync(request);
+			client.Send(request);
 		}
 
-		public static Task SendMessageAsync(this ChatRoomClient client, string message)
+		public static void SendMessage(this ChatRoomClient client, string message)
 		{
-			return client.SendAsync($"BROADCAST:{message}");
+			client.Send($"BROADCAST:{message}");
 		}
 	}
 }

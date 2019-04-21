@@ -24,18 +24,18 @@ namespace ChatRoomLibrary
 			m_Port = port;
 		}
 
-		public async ValueTask ConnectAsync()
+		public void Connect()
 		{
-			await m_TcpClient.ConnectAsync(m_Host, m_Port);
+			m_TcpClient.Connect(m_Host, m_Port);
 
 			Receive();
 		}
 
-		public Task SendAsync(byte[] data, int offset, int count)
+		public void Send(byte[] data, int offset, int count)
 		{
 			var stream = m_TcpClient.GetStream();
 
-			return stream.WriteAsync(data, offset, count);
+			stream.Write(data, offset, count);
 		}
 
 		private static bool CheckConnected(TcpClient client)

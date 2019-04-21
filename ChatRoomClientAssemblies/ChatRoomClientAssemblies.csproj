@@ -7,19 +7,21 @@
 	<PropertyGroup>
 		<UnityTargetFolder>$(SolutionDir)Assets\Assemblies\</UnityTargetFolder>
 	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+	  <PackageReference Include="System.Reactive" Version="4.1.5" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\ChatRoomLibrary\ChatRoomLibrary.csproj" />
 	</ItemGroup>
 	<Target Name="PublishModule" AfterTargets="PostBuildEvent">
 		<ItemGroup>
-			<ModuleFiles
-				Include="$(TargetDir)*"
-				Exclude="$(TargetDir)$(AssemblyName).*;$(TargetDir)System.Runtime.InteropServices.WindowsRuntime.dll"/>
-			<UnityExistsAssemblies Include="$(UnityTargetFolder)*"/>
-			<UnityAssembliesSubFolders Include="$(UnityTargetFolder)**\"/>
+			<ModuleFiles Include="$(TargetDir)*" Exclude="$(TargetDir)$(AssemblyName).*;$(TargetDir)System.Runtime.InteropServices.WindowsRuntime.dll" />
+			<UnityExistsAssemblies Include="$(UnityTargetFolder)*" />
+			<UnityAssembliesSubFolders Include="$(UnityTargetFolder)**\" />
 		</ItemGroup>
-		<Delete Files="@(UnityExistsAssemblies)"/>
+		<Delete Files="@(UnityExistsAssemblies)" />
 		<RemoveDir Directories="@(UnityAssembliesSubFolders)" />
 		<Copy SourceFiles="@(ModuleFiles)" DestinationFolder="$(UnityTargetFolder)" />
 	</Target>
