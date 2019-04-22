@@ -10,6 +10,10 @@ namespace ServerTest
 			var server = new ChatRoomServer(4099);
 
 			Console.ReadKey();
+
+			server.Dispose();
+
+			Console.ReadKey();
 		}
 	}
 }

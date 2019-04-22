@@ -8,11 +8,10 @@ using System.Threading.Tasks;
 
 namespace ChatRoomLibrary
 {
-	class SocketServer
+	class SocketServer : IDisposable
 	{
 		private static byte[] _CheckBuffer = new byte[1];
 
-		private CancellationTokenSource m_AcceptCancelSource;
 		private Task m_AcceptTask;
 		private byte[] m_Buffer = new byte[1024];
 		private HashSet<TcpClient> m_Clients = new HashSet<TcpClient>();
@@ -20,8 +19,8 @@ namespace ChatRoomLibrary
 		private IPAddress m_ListenIP;
 		private int m_Port;
 		private TcpClient[] m_ReadonlyClients;
-		private CancellationTokenSource m_ReceiveCancelSource;
 		private Task m_ReceiveTask;
+		private bool m_Disposed;
 
 		public event EventHandler<SocketReceiveEventArgs> ReceiveData;
 		public event EventHandler<TcpClientEventArgs> ClientAdded;
@@ -38,40 +37,49 @@ namespace ChatRoomLibrary
 
 		}
 
+		~SocketServer()
+		{
+			Dispose(false);
+		}
+
 		public void Listen()
 		{
 			m_Listener = new TcpListener(m_ListenIP, m_Port);
 			m_Listener.Start();
-
-			m_AcceptCancelSource = new CancellationTokenSource();
 
 			m_AcceptTask = Task.Factory.StartNew(
 				() =>
 				{
 					while (true)
 					{
-						var acceptedClient = m_Listener.AcceptTcpClient();
-
-						lock (m_Clients)
+						try
 						{
-							m_Clients.Add(acceptedClient);
-							m_ReadonlyClients = m_Clients.ToArray();
+							var acceptedClient = m_Listener.AcceptTcpClient();
 
-							ClientAdded?.Invoke(
-								this,
-								new TcpClientEventArgs
-								{
-									Client = acceptedClient
-								});
+							lock (m_Clients)
+							{
+								m_Clients.Add(acceptedClient);
+								m_ReadonlyClients = m_Clients.ToArray();
 
-							if (m_Clients.Count == 1)
-								Receive();
+								ClientAdded?.Invoke(
+									this,
+									new TcpClientEventArgs
+									{
+										Client = acceptedClient
+									});
+
+								if (m_Clients.Count == 1)
+									Receive();
+							}
+						}
+						catch (SocketException ex) when (ex.ErrorCode == 10004)
+						{
+							Console.WriteLine("連線關閉");
+							break;
 						}
 					}
 				},
-				m_AcceptCancelSource.Token,
-				TaskCreationOptions.LongRunning,
-				TaskScheduler.Current);
+				TaskCreationOptions.LongRunning);
 		}
 
 		private static bool CheckConnected(TcpClient client)
@@ -97,25 +105,22 @@ namespace ChatRoomLibrary
 
 		private void Receive()
 		{
-			m_ReceiveCancelSource = new CancellationTokenSource();
-
 			m_ReceiveTask = Task.Factory.StartNew(
 				() =>
 				{
 					var buffer = new byte[1024];
 
-					while (true)
+					while (m_ReadonlyClients?.Length > 0)
 					{
 						foreach (var client in m_ReadonlyClients)
 							if (!(CheckConnected(client) && ReceiveMessage(client)))
 								RemoveClient(client);
 
-						Thread.Sleep(1);
+						Thread.Sleep(1000);
+						Console.WriteLine(DateTime.Now);
 					}
 				},
-				m_ReceiveCancelSource.Token,
-				TaskCreationOptions.LongRunning,
-				TaskScheduler.Current);
+				TaskCreationOptions.LongRunning);
 		}
 
 		private bool ReceiveMessage(TcpClient client)
@@ -177,6 +182,30 @@ namespace ChatRoomLibrary
 					.ToArray());
 
 			return new ValueTask(Task.CompletedTask);
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (!m_Disposed)
+			{
+				lock (m_Clients)
+				{
+					m_ReadonlyClients = null;
+					foreach (var client in m_Clients)
+						client.Close();
+
+					m_Clients.Clear();
+				}
+				m_Listener.Stop();
+
+				m_Disposed = true;
+			}
 		}
 	}
 }

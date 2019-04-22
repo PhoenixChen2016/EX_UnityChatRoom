@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.Reactive.Linq;
 
 namespace ChatRoomLibrary
 {
-	public class ChatRoomServer
+	public class ChatRoomServer : IDisposable
 	{
 		private SocketServer m_SocketServer;
 		private ConcurrentDictionary<TcpClient, string> m_ClientNames = new ConcurrentDictionary<TcpClient, string>();
+		private bool m_Disposed;
 
 		public ChatRoomServer(int port)
 		{
@@ -19,6 +21,30 @@ namespace ChatRoomLibrary
 
 			m_SocketServer.ReceiveData += SocketServer_ReceiveData;
 			m_SocketServer.ClientRemoved += SocketServer_ClientRemoved;
+		}
+
+		~ChatRoomServer()
+		{
+			Dispose(false);
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (!m_Disposed)
+			{
+				m_SocketServer.Dispose();
+				m_SocketServer = null;
+
+
+
+				m_Disposed = true;
+			}
 		}
 
 		private void SocketServer_ClientRemoved(object sender, TcpClientEventArgs e)
